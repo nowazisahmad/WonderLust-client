@@ -83,9 +83,9 @@ export function Testimonials() {
           className="w-full"
         >
           {/* Heading + carousel controls */}
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-4xl font-light tracking-tight text-foreground md:text-5xl">
+              <h2 className="text-3xl font-light tracking-tight text-foreground sm:text-4xl md:text-5xl">
                 What Travelers Say
               </h2>
               <p className="mt-3 text-sm text-muted-foreground">

@@ -1,78 +1,125 @@
-"use client"; 
+"use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { User } from "lucide-react";
+import { cn } from "cn";
+import { authClient } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "./ui/button";
+
+const navLinks = [
+  { href: "/", label: "Home", active: true },
+  { href: "/destinations", label: "Destinations", active: false },
+  { href: "/add-destination", label: "Add Destination", active: false },
+  { href: "/my-bookings", label: "My Bookings", active: false },
+];
 
 export default function Navbar() {
-  const pathname = usePathname();
+  const { data: session } = authClient.useSession();
 
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Destinations", href: "/destinations" },
-    { name: "Add-Destination", href: "/add-destination"},
-    { name: "My Bookings", href: "/bookings" },
-    { name: "Admin", href: "/admin" },
-  ];
+  const user = session?.user;
+
+  const handleSignout = () => {
+    authClient.signOut();
+  };
 
   return (
-    <nav className="absolute top-0 left-0 w-full z-50 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-15">
-          
-          {/* Left: Navigation Links */}
-          <div className="hidden md:flex space-x-8 text-[15px] text-gray-800">
-            {navLinks.map((link) => {
-              // Check if the current path matches the link
-              const isActive = pathname === link.href;
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
+      <nav className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+        {/* Left: primary links */}
+        <ul className="flex items-center gap-7">
+          {navLinks.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className={cn(
+                  "text-sm transition-colors hover:text-[#00A8E8]",
+                  link.active
+                    ? "border-b-2 border-[#00A8E8] pb-0.5 font-medium text-[#00A8E8]"
+                    : "text-foreground",
+                )}
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
 
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`transition-colors duration-200 ${
-                    isActive
-                      ? "text-[#00AEEF] font-medium" 
-                      : "hover:text-[#00AEEF]"
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </div>
+        {/* Center: logo */}
+        <Link
+          href="/"
+          className="absolute left-1/2 -translate-x-1/2 text-3xl font-bold tracking-tight text-[#00A8E8]"
+        >
+          Wanderlast
+        </Link>
 
-          {/* Center: Logo */}
-          <div className="shrink-0 flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-            <Link
-              href="/"
-              className="text-2xl font-bold text-[#00AEEF] tracking-wide"
-            >
-              Wanderlast
-            </Link>
-          </div>
+        {/* Right: account links */}
+        <div className="flex items-center gap-6">
+          <Link
+            href="/profile"
+            className="flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-[#00A8E8]"
+          >
+            <User className="size-4" />
+            Profile
+          </Link>
 
-          {/* Right: Auth Links */}
-          <div className="flex items-center space-x-6 text-[15px] text-gray-800">
-            <button className="flex items-center hover:text-[#00AEEF] transition-colors">
-              <User size={16} className="mr-1.5" strokeWidth={2} />
-              <span>Profile</span>
-            </button>
-            <Link
-              href="/login"
-              className="hover:text-[#00AEEF] transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 hover:text-[#00AEEF] transition-colors"
-            >
-              Sign Up
-            </Link>
-          </div>
+          {user ? (
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Open user menu"
+                  >
+                    <Avatar>
+                      <AvatarImage
+                        referrerPolicy="no-referrer"
+                        src={user.image as string}
+                      />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                }
+              />
+              <PopoverContent>
+                <PopoverHeader>
+                  <PopoverTitle>{user.name}</PopoverTitle>
+                  <PopoverDescription>
+                    <p>{user.email}</p>
+                    <Button onClick={handleSignout} variant="destructive">
+                      SignOut
+                    </Button>
+                  </PopoverDescription>
+                </PopoverHeader>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm text-foreground transition-colors hover:text-[#00A8E8]"
+              >
+                LogIn
+              </Link>
+              <Link
+                href="/signup"
+                className="text-sm text-foreground transition-colors hover:text-[#00A8E8]"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }

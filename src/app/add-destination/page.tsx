@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import { Save, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { PackageCheck, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,21 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { getTokenFromClient } from "@/lib/getTokenFromClient";
 
-const categories = [
-  "Beach",
-  "Mountain",
-  "City",
-  "Adventure",
-  "Cultural",
-  "Wildlife",
-  "Desert",
-  "Island",
-];
+const categories = ["Beach", "Mountain", "City", "Adventure", "Cultural"];
 
 const initialForm = {
-  destination: "",
+  name: "",
   country: "",
+  category: "",
   price: "",
   duration: "",
   departureDate: "",
@@ -36,99 +30,110 @@ const initialForm = {
   description: "",
 };
 
-type FormState = typeof initialForm;
-type FieldName = keyof FormState;
-
-const fieldClass = "border-slate-200 bg-slate-50";
-
 export default function AddDestinationPage() {
-  const [form, setForm] = useState<FormState>(initialForm);
-  const [category, setCategory] = useState<string | null>("Beach");
-  const [submittedName, setSubmittedName] = useState<string | null>(null);
+  const router = useRouter();
+  const [form, setForm] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
 
-  const updateField =
-    (name: FieldName) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((current) => ({ ...current, [name]: event.target.value }));
-      setSubmittedName(null);
-    };
+  const update = (field: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [field]: value }));
 
-  const handleSubmit = async(event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmittedName(form.destination.trim());
-  
-    const res = await fetch("http://localhost:5000/add-destination", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form)
-    });
-    
-    const data = await res.json()
-    console.log(data)
+    if (submitting) return;
+    setSubmitting(true);
 
+    try {
+      const token = await getTokenFromClient();
+
+      if (!token) {
+        toast.error("You must be signed in to add a destination.");
+        return;
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/add-destination`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(form),
+        }
+      );
+
+      const result = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        toast.error(result?.message || "Failed to add the travel package.");
+        return;
+      }
+      router.refresh();
+
+      toast.success("Travel package added successfully.");
+      setForm(initialForm);
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleCancel = () => {
+  const handleClear = () => {
     setForm(initialForm);
-    setCategory("Beach");
-    setSubmittedName(null);
+    toast.info("Form cleared.");
   };
 
   return (
-    <main className="w-full px-6 py-8">
-      <h1 className="flex justify-between text-3xl font-normal md:text-4xl">
-        Add New Travel Package
-      </h1>
+    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-2xl">
+        <h1 className="text-3xl font-light tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          Add New Travel Package
+        </h1>
 
-      <form onSubmit={handleSubmit}>
-        <Card className="mx-auto mt-10 w-full max-w-lg gap-0 shadow-sm [--card-spacing:--spacing(5)]">
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="destination-name">Destination Name</Label>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-8 rounded-sm border border-border bg-white p-5 shadow-sm sm:mt-10 sm:p-8"
+        >
+          <div className="grid gap-5">
+            {/* Destination Name */}
+            <div className="grid gap-2">
+              <Label htmlFor="name">Destination Name</Label>
               <Input
-                id="destination-name"
-                required
+                id="name"
                 placeholder="Bali Paradise"
-                value={form.destination}
-                onChange={updateField("destination")}
-                className={fieldClass}
+                value={form.name}
+                onChange={(event) => update("name", event.target.value)}
+                required
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+            {/* Country + Category */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-2">
                 <Label htmlFor="country">Country</Label>
                 <Input
                   id="country"
-                  required
                   placeholder="Indonesia"
                   value={form.country}
-                  onChange={updateField("country")}
-                  className={fieldClass}
+                  onChange={(event) => update("country", event.target.value)}
+                  required
                 />
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="category">Category</Label>
+              <div className="grid gap-2">
+                <Label>Category</Label>
                 <Select
-                  value={category}
-                  onValueChange={(value) => {
-                    setCategory(value);
-                    setSubmittedName(null);
-                  }}
+                  value={form.category}
+                  onValueChange={(value) => update("category", value ?? "")}
                 >
-                  <SelectTrigger
-                    id="category"
-                    className={`w-full ${fieldClass}`}
-                  >
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Beach" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -136,99 +141,95 @@ export default function AddDestinationPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+            {/* Price + Duration */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-2">
                 <Label htmlFor="price">Price (USD)</Label>
                 <Input
                   id="price"
-                  required
-                  inputMode="decimal"
-                  pattern="[0-9]+(\.[0-9]{1,2})?"
+                  type="number"
                   placeholder="e.g., 1299"
                   value={form.price}
-                  onChange={updateField("price")}
-                  className={fieldClass}
+                  onChange={(event) => update("price", event.target.value)}
+                  required
+                  min="0"
                 />
               </div>
-
-              <div className="space-y-1.5">
+              <div className="grid gap-2">
                 <Label htmlFor="duration">Duration</Label>
                 <Input
                   id="duration"
-                  required
                   placeholder="e.g., 7 Days/6 Nights"
                   value={form.duration}
-                  onChange={updateField("duration")}
-                  className={fieldClass}
+                  onChange={(event) => update("duration", event.target.value)}
+                  required
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="departure-date">Departure Date</Label>
+            {/* Departure Date */}
+            <div className="grid gap-2">
+              <Label htmlFor="departureDate">Departure Date</Label>
               <Input
-                id="departure-date"
-                required
+                id="departureDate"
                 type="date"
                 value={form.departureDate}
-                onChange={updateField("departureDate")}
-                className={fieldClass}
+                onChange={(event) =>
+                  update("departureDate", event.target.value)
+                }
+                required
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="image-url">Image URL</Label>
+            {/* Image URL */}
+            <div className="grid gap-2">
+              <Label htmlFor="imageUrl">Image URL</Label>
               <Input
-                id="image-url"
-                required
+                id="imageUrl"
                 type="url"
                 placeholder="https://example.com/image.jpg"
                 value={form.imageUrl}
-                onChange={updateField("imageUrl")}
-                className={fieldClass}
+                onChange={(event) => update("imageUrl", event.target.value)}
+                required
               />
             </div>
 
-            <div className="space-y-1.5">
+            {/* Description */}
+            <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                required
                 placeholder="Describe the travel experience..."
+                className="min-h-36"
                 value={form.description}
-                onChange={updateField("description")}
-                className={`min-h-20 ${fieldClass}`}
+                onChange={(event) => update("description", event.target.value)}
+                required
               />
             </div>
-          </CardContent>
+          </div>
 
-          <CardFooter className="border-transparent bg-transparent">
-            {submittedName !== null && (
-              <p role="status" className="mr-auto text-sm text-emerald-600">
-                Package &quot;{submittedName}&quot; added successfully!
-              </p>
-            )}
-            <div className="ml-auto flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 className="size-3.5" />
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-[#00A8E8] text-white hover:bg-[#0095CC]"
-              >
-                <Save className="size-3.5" />
-                Add Travel Package
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </form>
+          {/* Actions */}
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClear}
+              className="border-destructive/30 bg-background text-destructive hover:bg-destructive/5 hover:text-destructive sm:w-auto"
+            >
+              <Trash2 />
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bg-[#00A8E8] text-white hover:bg-[#0095d1] sm:w-auto"
+            >
+              <PackageCheck />
+              {submitting ? "Adding..." : "Add Travel Package"}
+            </Button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }

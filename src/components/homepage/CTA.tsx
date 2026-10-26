@@ -28,7 +28,7 @@ export default function CTA() {
         </p>
 
         <Link
-          href="/book"
+          href="/destinations"
           className="group flex items-center justify-center gap-2 bg-white text-gray-900 px-8 py-3 transition-all duration-300 hover:bg-gray-100"
         >
           <span className="uppercase text-sm tracking-wider font-semibold">

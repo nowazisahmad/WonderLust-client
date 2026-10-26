@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FaXTwitter, FaLinkedin, FaInstagram } from "react-icons/fa6";
-import { FiArrowUpRight } from "react-icons/fi";
+import NewsletterForm from "@/components/NewsletterForm";
 
 export default function Footer() {
   return (
@@ -26,21 +26,7 @@ export default function Footer() {
               </p>
               
               {/* Newsletter Input */}
-              <form className="flex items-center bg-[#2A2A2A] w-full max-w-sm rounded-sm overflow-hidden">
-                <input
-                  type="email"
-                  placeholder="Enter email"
-                  className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 px-4 py-3 outline-none"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="bg-[#333333] hover:bg-[#444444] transition-colors px-4 py-3 flex items-center justify-center text-white"
-                  aria-label="Subscribe"
-                >
-                  <FiArrowUpRight size={18} />
-                </button>
-              </form>
+              <NewsletterForm />
             </div>
           </div>
 
@@ -63,7 +49,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/bookings" className="text-sm text-gray-400 hover:text-white transition-colors">
+                  <Link href="/my-bookings" className="text-sm text-gray-400 hover:text-white transition-colors">
                     My Bookings
                   </Link>
                 </li>
