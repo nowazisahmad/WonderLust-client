@@ -19,18 +19,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${JosefinSans.className} h-full antialiased`}>
       <body className="flex flex-col mx-auto max-w-7xl">
-        <Suspense
-          fallback={
-            <div className="fixed inset-x-0 top-0 z-50 h-15 border-b border-border bg-background">
-              <div className="mx-auto flex h-full max-w-7xl items-center px-4">
-                <span className="font-bold text-primary text-xl">WonderLust</span>
-              </div>
-            </div>
-          }
-        >
-          <Navbar />
-        </Suspense>
-        <main className="pt-15 grow">{children}</main>
+        <Navbar/>
+        <main>{children}</main>
         <Footer />
         <Toaster position="top-center" richColors closeButton />
       </body>

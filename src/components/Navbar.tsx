@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { User } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { cn } from "cn";
 import { authClient } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Suspense, type ReactElement } from "react";
 import {
   Popover,
   PopoverContent,
@@ -16,15 +18,15 @@ import {
 import { Button } from "./ui/button";
 
 const navLinks = [
-  { href: "/", label: "Home", active: true },
-  { href: "/destinations", label: "Destinations", active: false },
-  { href: "/add-destination", label: "Add Destination", active: false },
-  { href: "/my-bookings", label: "My Bookings", active: false },
+  { href: "/", label: "Home" },
+  { href: "/destinations", label: "Destinations" },
+  { href: "/add-destination", label: "Add Destination" },
+  { href: "/my-bookings", label: "My Bookings" },
 ];
 
-export default function Navbar() {
+function NavbarContent(): ReactElement {
   const { data: session } = authClient.useSession();
-
+  const pathname = usePathname();
   const user = session?.user;
 
   const handleSignout = () => {
@@ -42,7 +44,7 @@ export default function Navbar() {
                 href={link.href}
                 className={cn(
                   "text-sm transition-colors hover:text-[#00A8E8]",
-                  link.active
+                  pathname === link.href
                     ? "border-b-2 border-[#00A8E8] pb-0.5 font-medium text-[#00A8E8]"
                     : "text-foreground",
                 )}
@@ -65,7 +67,12 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           <Link
             href="/profile"
-            className="flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-[#00A8E8]"
+            className={cn(
+              "flex items-center gap-1.5 text-sm transition-colors hover:text-[#00A8E8]",
+              pathname === "/profile"
+                ? "font-medium text-[#00A8E8]"
+                : "text-foreground",
+            )}
           >
             <User className="size-4" />
             Profile
@@ -106,13 +113,24 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="text-sm text-foreground transition-colors hover:text-[#00A8E8]"
+                className={cn(
+                  "text-sm transition-colors hover:text-[#00A8E8]",
+                  pathname === "/login"
+                    ? "font-medium text-[#00A8E8]"
+                    : "text-foreground",
+                )}
               >
-                LogIn
+                Login
               </Link>
+
               <Link
                 href="/signup"
-                className="text-sm text-foreground transition-colors hover:text-[#00A8E8]"
+                className={cn(
+                  "text-sm transition-colors hover:text-[#00A8E8]",
+                  pathname === "/signup"
+                    ? "font-medium text-[#00A8E8]"
+                    : "text-foreground",
+                )}
               >
                 Sign Up
               </Link>
@@ -121,5 +139,13 @@ export default function Navbar() {
         </div>
       </nav>
     </header>
+  );
+}
+
+export default function Navbar() {
+  return (
+    <Suspense fallback={null}>
+      <NavbarContent />
+    </Suspense>
   );
 }
